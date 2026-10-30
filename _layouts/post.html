@@ -1,0 +1,25 @@
+---
+layout: default
+---
+<article class="post">
+  <header class="post-header">
+    <h1>{{ page.title }}</h1>
+    <p class="meta">
+      <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%B %-d, %Y" }}</time>
+      {%- if page.categories.size > 0 %} · {% include term-links.html terms=page.categories kind="category" %}{% endif %}
+    </p>
+  </header>
+  {%- if page.image %}{% unless content contains page.image %}
+  <figure class="featured"><img src="{{ page.image | relative_url }}" alt=""></figure>
+  {%- endunless %}{% endif %}
+  <div class="post-content">
+    {{ content }}
+  </div>
+  {%- if page.tags.size > 0 %}
+  <p class="tags">Tags: {% include term-links.html terms=page.tags kind="tag" %}</p>
+  {%- endif %}
+  <nav class="post-nav">
+    {%- if page.previous %}<a class="prev" href="{{ page.previous.url | relative_url }}">← {{ page.previous.title }}</a>{% endif %}
+    {%- if page.next %}<a class="next" href="{{ page.next.url | relative_url }}">{{ page.next.title }} →</a>{% endif %}
+  </nav>
+</article>

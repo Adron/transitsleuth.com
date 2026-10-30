@@ -1,0 +1,44 @@
+title: Transit Sleuth
+description: Transit sleuthing Seattle, Portland, and maybe a place near you.
+url: "https://transitsleuth.com"
+baseurl: ""
+lang: en_US
+timezone: America/Los_Angeles
+author:
+  name: Adron Hall
+
+# Posts live in posts/_posts (and drafts in posts/_drafts).
+collections_dir: posts
+
+# Matches the WordPress permalink structure so every existing URL is preserved.
+# Imported posts also carry an explicit `permalink:` copied from WordPress.
+permalink: /:year/:month/:day/:title/
+
+paginate: 10
+paginate_path: "/page/:num/"
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-paginate
+
+defaults:
+  - scope: { path: "", type: posts }
+    values: { layout: post }
+
+exclude:
+  - .venv
+  - _wp_export
+  - scripts
+  - Gemfile
+  - Gemfile.lock
+  - EXPORT_PLAN.md
+  - punch-list.md
+  - README.md
+  - vendor
+  - node_modules

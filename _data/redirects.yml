@@ -1,0 +1,3 @@
+# Old WordPress URLs that redirected elsewhere on the live site.
+# GitHub Pages can't send real 301s, so these become instant meta-refresh + canonical pages.
+"/transit-sleuth-tv/": "/2013/09/13/transit-sleuth-tv-episode-1-transit-meet-n-how-to-carry-wine-gelato/"

@@ -1,0 +1,24 @@
+---
+layout: default
+title: Archives
+permalink: /archives/
+---
+<h1 class="archive-title">Archives</h1>
+<h2>Categories</h2>
+<p class="term-cloud">
+{%- assign cats = site.categories | sort -%}
+{%- for c in cats -%}
+  {%- assign s = c[0] | term_slug: "category" -%}
+  <a href="{{ '/category/' | append: s | append: '/' | relative_url }}">{{ c[0] }} <small>({{ c[1].size }})</small></a>
+{%- endfor -%}
+</p>
+<h2>All posts</h2>
+{%- assign years = site.posts | group_by_exp: "p", "p.date | date: '%Y'" -%}
+{%- for y in years %}
+<h3><a href="{{ '/' | append: y.name | append: '/' | relative_url }}">{{ y.name }}</a></h3>
+<ul class="archive-list">
+  {%- for post in y.items %}
+  <li><time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%m-%d" }}</time> <a href="{{ post.url | relative_url }}">{{ post.title }}</a></li>
+  {%- endfor %}
+</ul>
+{%- endfor %}
