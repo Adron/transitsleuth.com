@@ -82,9 +82,9 @@ The WordPress **Editor** theme (GPL) is ported, not imitated:
   Jekyll 3.10 can't run the custom plugin or `render_with_liquid`.
 - The repo `Adron/transitsleuth.com` is public, so Pages is free. The published site is about 450 MB, under
   the 1 GB limit, and the largest file is 18 MB.
-- Before the domain moves, the `github.io` preview is served under `/transitsleuth.com/`, and root-relative
-  image paths inside posts won't resolve there. Preview locally instead (`bundle exec jekyll serve`); the
-  build is otherwise identical.
+- Before the domain moves, the site is served at https://adron.github.io/transitsleuth.com/. A build hook in
+  `_plugins/wp_archives.rb` prefixes root-relative paths inside posts with that subpath, and does nothing
+  once the custom domain is set.
 
 ### DNS (current)
 
