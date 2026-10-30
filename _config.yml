@@ -7,6 +7,9 @@ timezone: America/Los_Angeles
 author:
   name: Adron Hall
 
+# Existing FeedBurner subscribers; FeedBurner itself reads /feed/ on this site.
+feed_url: https://feeds.feedburner.com/TransitSleuth
+
 # Posts live in posts/_posts (and drafts in posts/_drafts).
 collections_dir: posts
 
@@ -14,7 +17,8 @@ collections_dir: posts
 # Imported posts also carry an explicit `permalink:` copied from WordPress.
 permalink: /:year/:month/:day/:title/
 
-paginate: 10
+# WordPress showed 5 full posts per page; matching it keeps /page/N/ URLs pointing at the same posts.
+paginate: 5
 paginate_path: "/page/:num/"
 
 markdown: kramdown

@@ -1,11 +1,18 @@
 ---
 layout: default
+body_class: home blog
 ---
 {%- for post in paginator.posts %}
-  {% include post-card.html post=post %}
+  {% include article.html post=post %}
 {%- endfor %}
-<nav class="pager">
-  {%- if paginator.next_page %}<a href="{{ paginator.next_page_path | relative_url }}">← Older posts</a>{% endif %}
-  <span>Page {{ paginator.page }} of {{ paginator.total_pages }}</span>
-  {%- if paginator.previous_page %}<a href="{{ paginator.previous_page_path | relative_url }}">Newer posts →</a>{% endif %}
+<nav class="navigation paging-navigation" role="navigation">
+  <h1 class="screen-reader-text">Posts navigation</h1>
+  <div class="nav-links">
+    {%- if paginator.next_page %}
+    <div class="nav-previous"><a href="{{ paginator.next_page_path | relative_url }}" class="button"><span class="meta-nav"><i class="fa fa-arrow-circle-o-left"></i> Older posts</span></a></div>
+    {%- endif %}
+    {%- if paginator.previous_page %}
+    <div class="nav-next"><a href="{{ paginator.previous_page_path | relative_url }}" class="button"><span class="meta-nav">Newer posts <i class="fa fa-arrow-circle-o-right"></i></span></a></div>
+    {%- endif %}
+  </div>
 </nav>

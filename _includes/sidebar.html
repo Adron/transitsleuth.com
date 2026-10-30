@@ -1,0 +1,46 @@
+<div id="secondary" class="widget-area" role="complementary">
+  <aside id="search-3" class="widget widget_search">
+    <h2 class="widget-title">Find Transit Sleuth&rsquo;s Blog Entries&hellip;</h2>
+    {%- comment -%} No server-side search on a static site; hand off to DuckDuckGo scoped to this domain. {%- endcomment %}
+    <form role="search" method="get" class="search-form" action="https://duckduckgo.com/">
+      <label>
+        <span class="screen-reader-text">Search for:</span>
+        <input type="search" class="search-field" placeholder="Search &hellip;" name="q">
+      </label>
+      <input type="hidden" name="sites" value="transitsleuth.com">
+      <input type="submit" class="search-submit" value="Search">
+    </form>
+  </aside>
+  <aside id="text-3" class="widget widget_text">
+    <h2 class="widget-title">Subscribe to Transit Sleuth</h2>
+    <div class="textwidget"><p><i class="fa fa-rss"></i> <a href="{{ site.feed_url }}" rel="alternate">Posts RSS</a></p></div>
+  </aside>
+  <aside id="twitter-3" class="widget widget_text">
+    <h2 class="widget-title"><a href="https://x.com/transitsleuth">Transit Sleuth Tweeting</a></h2>
+  </aside>
+  <aside id="pages-2" class="widget widget_pages">
+    <h2 class="widget-title">Transit Sleuth Information</h2>
+    <ul>
+      {%- for item in site.data.navigation %}
+      <li class="page_item"><a href="{{ item.url | relative_url }}">{{ item.title }}</a></li>
+      {%- endfor %}
+    </ul>
+  </aside>
+  <aside id="linkcat-1356" class="widget widget_links">
+    <h2 class="widget-title">Blogroll</h2>
+    <ul class="xoxo blogroll">
+      {%- for link in site.data.blogroll %}
+      <li><a href="{{ link.url }}">{{ link.title }}</a></li>
+      {%- endfor %}
+    </ul>
+  </aside>
+  <aside id="archives-2" class="widget widget_archive">
+    <h2 class="widget-title">Transit Sleuth Archive</h2>
+    <ul>
+      {%- assign months = site.posts | group_by_exp: "p", "p.date | date: '%Y/%m'" -%}
+      {%- for m in months %}
+      <li><a href="{{ '/' | append: m.name | append: '/' | relative_url }}">{{ m.items.first.date | date: "%B %Y" }}</a>&nbsp;({{ m.size }})</li>
+      {%- endfor %}
+    </ul>
+  </aside>
+</div>

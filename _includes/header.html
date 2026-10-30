@@ -1,13 +1,33 @@
-<header class="site-header">
-  <div class="wrap">
-    <a class="site-title" href="{{ '/' | relative_url }}">{{ site.title }}</a>
-    <p class="site-tagline">{{ site.description }}</p>
-    <nav class="site-nav">
-      <a href="{{ '/' | relative_url }}">Home</a>
-      <a href="{{ '/about/' | relative_url }}">About</a>
-      <a href="{{ '/the-fleet/' | relative_url }}">The Fleet</a>
-      <a href="{{ '/disclaimer-and-manifesto/' | relative_url }}">Manifesto</a>
-      <a href="{{ '/archives/' | relative_url }}">Archives</a>
-    </nav>
+<header id="masthead" class="site-header" role="banner">
+  <ul class="toggle-bar" role="tablist">
+    <li id="panel-1" class="current" role="presentation">
+      <a href="#tab-1" data-tab="tab-1" role="tab" aria-controls="tab-1" aria-selected="true" class="current nav-toggle"><i class="fa fa-bars"></i><span class="screen-reader-text">View menu</span></a>
+    </li>
+    <li id="panel-3" role="presentation">
+      <a href="#tab-3" data-tab="tab-3" role="tab" aria-controls="tab-3" aria-selected="false" class="folder-toggle"><i class="fa fa-folder"></i><i class="fa fa-folder-open"></i><span class="screen-reader-text">View sidebar</span></a>
+    </li>
+  </ul>
+  <div id="tabs" class="toggle-tabs">
+    <div class="site-header-inside">
+      <div id="tab-1" class="tab-content current animated fadeIn" role="tabpanel" aria-hidden="false">
+        <div class="site-branding">
+          {%- comment -%} Empty, as on WordPress; the theme's spacing/centering rules key off it. {%- endcomment %}
+          <a href="{{ '/' | relative_url }}" class="site-logo-link" rel="home" aria-hidden="true" tabindex="-1"></a>
+          <h1 class="site-title"><a href="{{ '/' | relative_url }}" rel="home">{{ site.title }}</a></h1>
+          <h2 class="site-description">{{ site.description }}</h2>
+        </div>
+        <nav id="site-navigation" class="main-navigation" role="navigation">
+          <div class="menu"><ul>
+            <li><a href="{{ '/' | relative_url }}">Home</a></li>
+            {%- for item in site.data.navigation %}
+            <li class="page_item"><a href="{{ item.url | relative_url }}">{{ item.title }}</a></li>
+            {%- endfor %}
+          </ul></div>
+        </nav>
+      </div>
+      <div id="tab-3" class="tab-content animated fadeIn" role="tabpanel" aria-hidden="true">
+        {% include sidebar.html %}
+      </div>
+    </div>
   </div>
 </header>

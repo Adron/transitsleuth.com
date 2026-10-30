@@ -3,9 +3,10 @@ layout: default
 title: Archives
 permalink: /archives/
 ---
-<h1 class="archive-title">Archives</h1>
+<header class="page-header"><h1 class="page-title">Archives</h1></header>
 <h2>Categories</h2>
 <p class="term-cloud">
+
 {%- assign cats = site.categories | sort -%}
 {%- for c in cats -%}
   {%- assign s = c[0] | term_slug: "category" -%}

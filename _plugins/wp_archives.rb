@@ -65,6 +65,12 @@ module TransitSleuth
         site.pages << page
       end
 
+      # Single-author blog: WordPress's author archive lists every post.
+      site.pages << ArchivePage.new(site, "author/adron", {
+        "title" => "Author: Adron",
+        "posts" => site.posts.docs.sort_by(&:date).reverse,
+      })
+
       by = Hash.new { |h, k| h[k] = [] }
       site.posts.docs.each do |post|
         d = post.date

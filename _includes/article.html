@@ -1,0 +1,37 @@
+{%- comment -%}
+  Editor-theme article markup. include.post = the post, include.single = true on the post page.
+{%- endcomment -%}
+{%- assign post = include.post -%}
+<article id="post-{{ post.wp_id | default: post.slug }}" class="post type-post hentry{% if post.image %} has-post-thumbnail{% endif %}">
+  {%- if post.image %}
+  <div class="featured-image">
+    {% unless include.single %}<a href="{{ post.url | relative_url }}" rel="bookmark">{% endunless %}<img src="{{ post.image | relative_url }}" class="attachment-large-image size-large-image wp-post-image" alt="">{% unless include.single %}</a>{% endunless %}
+  </div>
+  {%- endif %}
+  <header class="entry-header">
+    <div class="entry-date">
+      <span class="posted-on"><a href="{{ post.url | relative_url }}" rel="bookmark"><time class="entry-date published" datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%B %-d, %Y" }}</time></a></span>
+      <span class="byline"> <span class="by">by</span> <span class="author vcard"><a class="url fn n" href="{{ '/author/adron/' | relative_url }}">Adron</a></span></span>
+    </div>
+    {%- if include.single %}
+    <h1 class="entry-title">{{ post.title }}</h1>
+    {%- else %}
+    <h1 class="entry-title"><a href="{{ post.url | relative_url }}" rel="bookmark">{{ post.title }}</a></h1>
+    {%- endif %}
+  </header>
+  {%- if post.categories.size > 0 or post.tags.size > 0 %}
+  <div class="entry-meta">
+    <ul class="meta-list">
+      {%- if post.categories.size > 0 %}
+      <li class="meta-cat">{% include term-links.html terms=post.categories kind="category" %}</li>
+      {%- endif %}
+      {%- if post.tags.size > 0 %}
+      <li class="meta-tag">{% include term-links.html terms=post.tags kind="tag" %}</li>
+      {%- endif %}
+    </ul>
+  </div>
+  {%- endif %}
+  <div class="entry-content">
+    {{ post.content }}
+  </div>
+</article>

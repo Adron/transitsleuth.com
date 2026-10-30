@@ -154,6 +154,18 @@ def site_path(url):
     return path + (f"#{p.fragment}" if p.fragment else "")
 
 
+_failed = None
+
+
+def failed_downloads():
+    """Local paths the images step couldn't fetch (from a previous run)."""
+    global _failed
+    if _failed is None:
+        log = RAW.parent / "image_errors.tsv"
+        _failed = {l.split("\t")[0] for l in log.read_text().splitlines()} if log.exists() else set()
+    return _failed
+
+
 GALLERY_SELECTORS = [
     ".wp-block-jetpack-tiled-gallery",
     "figure.wp-block-gallery",
@@ -215,6 +227,8 @@ def clean_html(content, image_refs, known_paths=frozenset()):
         src = img.get("src", "")
         local = upload_path(src)
         smug = smugmug_image(src)
+        if smug and smug[0] in failed_downloads():
+            smug = None  # couldn't be copied; keep the original remote URL
         if smug:
             local, image_refs[local] = smug
         elif local:
@@ -401,9 +415,15 @@ MIN_BYTES = 1_000_000
 def optimize():
     """Shrink oversized images in place (same path/name, so URLs don't change). Needs ImageMagick."""
     import subprocess
+    manifest = RAW.parent / "optimized.txt"
+    done = set(manifest.read_text().split("\n")) if manifest.exists() else set()
     before = after = 0
     for f in sorted(UPLOADS.rglob("*")):
-        if f.suffix.lower() not in (".jpg", ".jpeg", ".png") or f.stat().st_size < MIN_BYTES:
+        rel = str(f.relative_to(ROOT))
+        if f.suffix.lower() not in (".jpg", ".jpeg", ".png") or rel in done:
+            continue
+        done.add(rel)
+        if f.stat().st_size < MIN_BYTES:
             continue
         size = f.stat().st_size
         tmp = f.with_name(f".opt-{f.name}")
@@ -419,6 +439,7 @@ def optimize():
             tmp.unlink()
         before += size
         after += f.stat().st_size
+    manifest.write_text("\n".join(sorted(done)) + "\n")
     print(f"optimized: {before / 1e6:.1f} MB -> {after / 1e6:.1f} MB")
 
 
@@ -429,7 +450,8 @@ if __name__ == "__main__":
         "convert": [convert],
         "images": [images],
         "optimize": [optimize],
-        "all": [fetch, convert, images, optimize],
+        # convert runs again at the end so images that failed to download keep their remote URLs.
+        "all": [fetch, convert, images, optimize, convert],
     }
     for step in steps[cmd]:
         step()

@@ -1,0 +1,9 @@
+# Header menu + "Transit Sleuth Information" widget, same order as the WordPress site.
+- title: About the Transit Sleuth
+  url: /about/
+- title: Disclaimer and Manifesto
+  url: /disclaimer-and-manifesto/
+- title: The Fleet
+  url: /the-fleet/
+- title: Archives
+  url: /archives/

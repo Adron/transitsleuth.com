@@ -1,151 +1,116 @@
-# Transit Sleuth — Post Export Plan
+# Transit Sleuth — WordPress → GitHub Pages Migration
 
-## What the site is
+Status as of **2026-10-30**: the export and the Jekyll rebuild are done and verified locally. Next is deploying
+to GitHub Pages, then moving DNS. The running checklist lives in [`punch-list.md`](punch-list.md).
 
-- **transitsleuth.com** is hosted on **WordPress.com** (not self-hosted). The underlying site is `transitsleuth.wordpress.com`, site ID `14059367`.
-- The self-hosted REST route (`/wp-json/...`) returns 404. The **WordPress.com public API** works without auth for published content:
-  - WP v2: `https://public-api.wordpress.com/wp/v2/sites/transitsleuth.wordpress.com/`
-  - Legacy v1.1: `https://public-api.wordpress.com/rest/v1.1/sites/transitsleuth.wordpress.com/`
+## Source site
 
-### Inventory (as of 2026-10-19)
+- **transitsleuth.com** is on **WordPress.com** (`transitsleuth.wordpress.com`, site ID `14059367`), using the
+  Automattic **Editor** theme with no custom CSS.
+- Content comes from the WordPress.com public API, which needs no login:
+  `https://public-api.wordpress.com/wp/v2/sites/transitsleuth.wordpress.com/`.
 
-| Item       | Count | Notes |
-|------------|-------|-------|
-| Posts      | 591   | 2009-03-19 → 2026-09-01 |
-| Pages      | 3     | Optional; not "posts" but worth grabbing |
-| Categories | 58    | "Wanderings" (289), "Bus Related" (115), "Bike Related" (112), "Rail Related" (110)… |
-| Tags       | 732   | |
-| Media      | ?     | `/media` endpoint requires auth (401), so images get pulled from post HTML instead |
+| Item | Count | Notes |
+|------|-------|-------|
+| Posts | 591 | 2009-03-19 → 2026-09-01 (latest: "Every Bus, Train, and Ferry in Puget Sound — On One Live Map") |
+| Pages | 3 | About, Disclaimer and Manifesto, The Fleet |
+| Categories / tags in use | 54 / 672 | Archive URLs keep their exact WordPress slugs |
+| Uploads | 529 | Images plus 18 PDFs and 1 .docx, from `/wp-content/uploads/` |
+| Your SmugMug photos | 475 | Previously hotlinked; now copied into the repo |
 
-Content is Gutenberg block HTML (`wp-block-paragraph`, `wp-block-heading`, etc.). Older posts (2009–2015) will be classic-editor HTML and probably contain YouTube/Vimeo embeds and WordPress.com shortcodes. The API returns them already rendered.
+## How the export works
 
-## Target output
+`scripts/wp_export.py` (re-runnable, so it picks up new or edited posts):
 
-```
-posts/
-  2009/
-    2009-03-19-thursday-430pm-456pm-departure-double-unit-train/
-      index.md
-      images/…
-  …
-  2026/
-    2026-09-01-every-bus-train-and-ferry-in-puget-sound-on-one-live-map/
-      index.md
-      images/
-        featured.jpg
-        …
-```
+1. **fetch**: dumps posts, pages, categories, and tags to `_wp_export/raw/*.json`.
+2. **convert**: writes `posts/_posts/YYYY-MM-DD-slug.html`, with front matter holding the title, date (with
+   the correct UTC offset), an explicit WordPress `permalink`, categories, tags, a description from the
+   excerpt, and the featured image. It also:
+   - keeps the post body as WordPress-rendered HTML, so nothing is lost converting to Markdown. Old posts
+     are marked `render_with_liquid: false`.
+   - rewrites upload URLs (including the `i0.wp.com` image CDN and `*.files.wordpress.com`) to
+     `/wp-content/uploads/…` and drops `srcset`. Internal links become root-relative.
+   - converts Jetpack tiled galleries, classic galleries, and block galleries into one responsive grid.
+     Thumbnails that linked to WordPress "attachment pages" now link to the image file.
+   - copies the author's SmugMug photos locally. `photos.adron.me` stopped resolving, which broke **118
+     images on the live site**; the same paths still work on `adronhall.smugmug.com`, so those images are
+     restored here.
+3. **images**: downloads every referenced upload and logs failures to `_wp_export/image_errors.tsv`. 3
+   SmugMug images 404 at the source; they keep their original URLs, so they're no worse than on the live
+   site.
+4. **optimize**: caps images at 2000px and re-compresses them with ImageMagick, keeping the same file
+   names. Uploads went from 748 MB to about 440 MB. The full-size originals remain on WordPress.com and
+   SmugMug.
 
-Each post folder holds its own images, so a post can be moved or deleted without leaving broken links behind. `index.md` is Markdown with YAML front matter:
+## How URLs and SEO are preserved
 
-```yaml
----
-title: "The 2 Line across Lake Washington is finally real."
-date: 2026-06-03T22:25:53-07:00
-modified: …
-slug: the-2-line-across-lake-washington-is-finally-real
-wp_id: 7424
-original_url: https://transitsleuth.com/2026/06/03/the-2-line-across-lake-washington-is-finally-real/
-categories: [Rail Related, sound transit, …]
-tags: […]
-featured_image: images/featured.jpg
-excerpt: "…"
----
-```
+| WordPress URL | Jekyll |
+|---------------|--------|
+| `/YYYY/MM/DD/slug/` (all 591, including 32 with percent-encoded Unicode slugs) | Explicit `permalink` per post. New posts use `permalink: /:year/:month/:day/:title/` in Pacific time |
+| `/about/`, `/the-fleet/`, `/disclaimer-and-manifesto/` | Same paths |
+| `/page/N/` (5 posts per page, 119 pages) | `jekyll-paginate` with `paginate: 5`. Pages 2, 37, and 118 checked: identical posts |
+| `/category/<slug>/`, `/tag/<slug>/` | `_plugins/wp_archives.rb` + `_data/wp_taxonomy.yml` |
+| `/YYYY/`, `/YYYY/MM/`, `/YYYY/MM/DD/`, `/author/adron/` | Generated by the same plugin |
+| `/wp-content/uploads/…` images and files | Same paths |
+| `/feed/` (RSS 2.0) | `feed.xml`, copied to `/feed/` |
+| `/sitemap.xml`, `/robots.txt` | `jekyll-sitemap`, `robots.txt` |
+| `/transit-sleuth-tv/` (301 on WordPress) | `_data/redirects.yml` → meta-refresh + canonical |
 
-This works as-is with Hugo, Astro, Eleventy, Jekyll (with minor tweaks), or as a plain archive.
+Every post has a canonical URL, a meta description, Open Graph and Twitter tags, and JSON-LD
+(`jekyll-seo-tag`), all using `https://transitsleuth.com`.
 
-## Steps
+Verified on the local build: every WordPress post, page, category, and tag URL exists. The only broken
+internal links are a few that were already dead on WordPress (`/2012/annual-report/` and links to a 2009
+blog engine at `/blogs/my_transportation_obsession/…`).
 
-1. **Fetch term maps.** Page through `/categories` and `/tags` (`per_page=100`) and build `id → name` maps (about 9 requests).
-2. **Fetch all posts.** Page through `/posts?per_page=100&page=N&_embed=wp:featuredmedia` (6 pages). Save the raw JSON to `posts/_raw/` so it can be re-converted later without hitting the API again.
-3. **Convert each post:**
-   - Decode HTML entities in the title (`&nbsp;`, `&#8217;`, etc.).
-   - Convert `content.rendered` from HTML to Markdown (Python `markdownify` or Node `turndown`). Remove `wp-block-*` classes and empty block spacers.
-   - Keep `<iframe>` embeds (YouTube, maps) as raw HTML inside the Markdown rather than dropping them.
-4. **Download images:**
-   - Find every `<img src>` and `srcset` pointing to `transitsleuth.files.wordpress.com`, `transitsleuth.com/wp-content`, or `i[0-3].wp.com`.
-   - Strip resize query params (`?w=…&h=…`) to get the original file.
-   - Save to the post's `images/` folder and rewrite the links to relative paths. Do the same for the featured image from `_embedded`.
-   - Skip duplicates, and log any 404s to `posts/_export_log.csv`.
-5. **Rewrite internal links.** Change links to `transitsleuth.com/YYYY/MM/DD/slug/` to relative paths that point at the matching exported post.
-6. **Verify.** Check that there are 591 `index.md` files and that no remaining image links point at WordPress.com. Spot-check about 10 posts across different years against the live site, especially older posts with embeds.
-7. **Optional extras:** the 3 pages (`/pages`) and comments (v1.1 `/posts/{id}/replies`), if wanted.
+## Theme
 
-## Implementation
+The WordPress **Editor** theme (GPL) is ported, not imitated:
+- `assets/css/editor.css` is the theme's stylesheet, copied as-is.
+- Font Awesome 4.1 and the same Google Fonts (Source Sans Pro, Roboto Condensed) are used.
+- The layouts reproduce the theme's markup: the toggle-bar sidebar with Menu and Widgets tabs, the post-meta
+  column, and the post and page navigation. `assets/js/editor.js` is a dependency-free port of the theme's
+  jQuery tab script.
+- Sidebar widgets carried over: Search (now DuckDuckGo limited to this site), FeedBurner RSS, Twitter link,
+  Pages, Blogroll, and the monthly Archive.
+- Dropped because they depend on WordPress.com: comments, likes and sharing, email subscriptions, and the
+  Google+ widget.
 
-I recommend a single Python script (`scripts/export.py`) using `requests`, `markdownify`, `beautifulsoup4`, and `pyyaml`. It should be idempotent: skip posts and images that already exist, and use a small delay between requests. The full run is about 15 API calls plus roughly 1,000–2,000 image downloads.
+## Hosting: GitHub Pages at https://transitsleuth.com
 
-## The other option: WordPress.com's own export
+- The site builds with **Jekyll 4.4 in GitHub Actions** (`.github/workflows/pages.yml`). GitHub's built-in
+  Jekyll 3.10 can't run the custom plugin or `render_with_liquid`.
+- The repo `Adron/transitsleuth.com` is public, so Pages is free. The published site is about 450 MB, under
+  the 1 GB limit, and the largest file is 18 MB.
+- Before the domain moves, the `github.io` preview is served under `/transitsleuth.com/`, and root-relative
+  image paths inside posts won't resolve there. Preview locally instead (`bundle exec jekyll serve`); the
+  build is otherwise identical.
 
-In the WP.com dashboard, **Tools → Export → Export all** produces a WXR (XML) file plus a separate media archive. It also includes **drafts, private posts, and comments**, which the public API can't see. If drafts matter, download the WXR as well and feed it through the same conversion step. Either way, the public-API route above covers all 591 published posts without needing a login.
+### DNS (current)
 
-## Questions to settle before building
+- Registrar: **Automattic (WordPress.com)**; the domain expires 2030-04-22.
+- Nameservers: `ns1-3.wordpress.com`. Apex A records: `192.0.78.24` and `192.0.78.25`. `www` points to the
+  apex.
+- **Email:** MX is `smtp-fwd.wordpress.com` (WordPress.com email forwarding). **Moving DNS without carrying
+  this over will break email.**
 
-- **Output format:** Markdown with front matter (the default above), or keep raw HTML?
-- **Destination:** a specific static site generator (Hugo, Astro, etc.)? This affects front-matter keys and URL/slug layout.
-- **Scope:** include comments, the 3 pages, and/or drafts (which need WXR)?
+### DNS (target)
 
----
-
-# Hosting on GitHub Pages at transitsleuth.com (HTTPS)
-
-## Current state (checked 2026-10-19)
-
-- **Repo:** `git@github.com:Adron/transitsleuth.com.git` is already set up.
-- **Registrar:** Automattic (WordPress.com). The domain expires 2030-04-22.
-- **DNS:** nameservers are `ns1–3.wordpress.com`. The apex A records are `192.0.78.24` and `.25` (WP.com), and `www` points to the apex.
-- **Email:** MX is `smtp-fwd.wordpress.com`, so WP.com email forwarding is active. **Moving DNS without carrying this over will break email to @transitsleuth.com.**
-
-## What it takes
-
-### 1. Build the site
-GitHub Pages serves static files, so the exported Markdown needs a generator:
-- **Jekyll:** GitHub builds it natively. Least setup, but slow with 591 posts and limited plugins.
-- **Hugo or Astro:** fast, built by a GitHub Actions workflow and deployed with `actions/deploy-pages`. **Recommended: Hugo.** It builds ~600 posts in seconds, and page bundles (`index.md` + `images/`) match the export layout above exactly.
-
-Keep the WordPress URL scheme so existing links and search rankings survive. In Hugo: `permalinks: posts: /:year/:month/:day/:slug/`. Category and tag archives can use `/category/:slug/` and `/tag/:slug/` to match WP.
-
-### 2. Configure Pages on the repo
-- Settings → Pages → Source: **GitHub Actions** (for Hugo/Astro).
-- Custom domain: `transitsleuth.com`. With Actions deploys, set it in Settings (a `CNAME` file in the repo is only used by branch-based deploys, but adding `static/CNAME` doesn't hurt).
-- Set `baseURL = "https://transitsleuth.com/"` in the generator config.
-- **Verify the domain** for the Adron account (Settings → Pages → Verified domains, which adds a TXT record). This stops anyone else from claiming the domain on GitHub.
-- Repo visibility: Pages from a private repo needs a paid plan. A public repo is free.
-
-### 3. DNS changes
-Records GitHub Pages needs:
-
-| Host  | Type  | Value |
-|-------|-------|-------|
-| `@`   | A     | 185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153 |
-| `@`   | AAAA  | 2606:50c0:8000::153, 2606:50c0:8001::153, 2606:50c0:8002::153, 2606:50c0:8003::153 |
+| Host | Type | Value |
+|------|------|-------|
+| `@` | A | 185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153 |
+| `@` | AAAA | 2606:50c0:8000::153, 2606:50c0:8001::153, 2606:50c0:8002::153, 2606:50c0:8003::153 |
 | `www` | CNAME | `adron.github.io` |
-| `_github-pages-challenge-adron` | TXT | (value from GitHub's domain verification) |
-| `@`   | MX    | **keep the existing email setup** (see below) |
+| `_github-pages-challenge-adron` | TXT | value from GitHub → Settings → Pages → Verified domains |
+| `@` | MX | keep the existing email forwarding |
 
-There are two ways to make these changes:
-- **A. Keep the domain at WordPress.com and edit DNS there** (Upgrades → Domains → DNS records). The apex A records are controlled by WP.com while the domain is attached to the blog, so first disconnect the domain from the WP.com site (or make the WP.com site use `transitsleuth.wordpress.com` as its primary address). Then add the records above. WP.com email forwarding keeps working because the nameservers don't change.
-- **B. Transfer the domain or nameservers** to another provider (e.g. Cloudflare Registrar or Porkbun). This gives more control, but you need to recreate the MX/forwarding first (Cloudflare Email Routing, ImprovMX, etc.) or email breaks. WP.com domain transfers are also locked for 60 days after registration or transfer changes.
+**Recommended:** keep the domain at WordPress.com and edit its DNS there. Detach the domain from the
+WordPress.com site first (or make `transitsleuth.wordpress.com` the site's primary address), then replace
+the A records. Email forwarding keeps working because the nameservers don't change. Transferring the domain
+elsewhere (Cloudflare, Porkbun) is possible, but the email forwarding has to be rebuilt first.
 
-**Recommendation: Option A.** It's the smallest change and nothing breaks.
+### HTTPS
 
-### 4. HTTPS
-- GitHub provisions a Let's Encrypt certificate automatically once DNS resolves to GitHub. This can take from a few minutes up to about 24 hours.
-- Then check **Settings → Pages → Enforce HTTPS** so http requests redirect to https.
-- Remove any CAA record that excludes `letsencrypt.org` (none exist today).
-- With both apex and `www` configured, GitHub redirects `www` → apex (or the reverse, depending on which one is set as the custom domain).
-- Before cutover, rewrite any hard-coded `http://transitsleuth.com/...` links in posts to `https://` (or relative paths) to avoid mixed-content warnings. Embedded `http://` iframes and images should be upgraded or localized too.
-
-### 5. Cutover order (minimizes downtime)
-1. Export the posts, build the site, and deploy it. Check it at `https://adron.github.io/transitsleuth.com/` (use a temporary baseURL or a preview).
-2. Verify the domain on GitHub (add the TXT record).
-3. Lower the DNS TTLs, then disconnect the domain from the WP.com site and add the A/AAAA/CNAME records.
-4. Set the custom domain in Pages, wait for the certificate, and turn on Enforce HTTPS.
-5. Spot-check old URLs (`/2009/03/19/.../`), images, the RSS feed (`/feed/` → map with an alias or redirect page), and email forwarding.
-6. Keep the WP.com site live at `transitsleuth.wordpress.com` (or set it private) as a fallback until you're satisfied.
-
-### Things that won't carry over
-- Comments become static (exported) or go away. Giscus/utterances can add new comments using GitHub Discussions.
-- WP.com stats, Jetpack subscriptions, and email followers. Export the subscriber list from WP.com if you want it.
-- Search: there's no server, so client-side search would use Pagefind or Hugo + Lunr.
+GitHub issues a Let's Encrypt certificate automatically once DNS points at it, which takes anywhere from
+minutes to about 24 hours. Then turn on **Settings → Pages → Enforce HTTPS**. Content was already rewritten
+to use https and relative links, so there are no mixed-content warnings.
