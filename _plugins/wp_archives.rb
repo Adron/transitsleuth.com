@@ -113,3 +113,11 @@ Jekyll::Hooks.register :site, :post_write do |site|
     FileUtils.cp(src, File.join(dir, "index.html"))
   end
 end
+
+# Post bodies use root-relative URLs (/wp-content/..., /2013/11/...). When the site is served from a
+# subpath (the github.io preview at /transitsleuth.com/), prefix them with baseurl. No-op on the real domain.
+Jekyll::Hooks.register [:pages, :documents], :post_render do |doc|
+  base = doc.site.config["baseurl"].to_s.chomp("/")
+  next if base.empty? || !doc.output_ext.to_s.match?(/\.(html|xml)$/) || doc.output.nil?
+  doc.output = doc.output.gsub(%r{(\s(?:src|href|content)=["'])/(?!/|#{Regexp.escape(base.sub(%r{^/}, ""))}/)}) { "#{$1}#{base}/" }
+end
