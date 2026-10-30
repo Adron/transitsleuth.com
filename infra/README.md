@@ -42,9 +42,16 @@ certificate is issued *before* the switch. It also gives real 301s and correct f
 ## Zero-downtime cutover runbook
 
 ### Phase 1: move DNS hosting only (visitors see no change)
-The Route 53 zone contains an exact copy of the WordPress.com zone: apex A `192.0.78.24/25`, `www` and `*`
-CNAME to the apex, and MX `0 smtp-fwd.wordpress.com`. Answers are identical, so it doesn't matter which
-nameservers a resolver uses during propagation.
+The Route 53 zone copies the WordPress.com zone (apex A `192.0.78.24/25`, `www` and `*` CNAME to the apex),
+so web answers are identical whichever nameservers a resolver uses during propagation.
+
+**Email:** WordPress.com email forwarding only works with WordPress nameservers
+([support doc](https://wordpress.com/support/add-email/email-forwarding/)), so forwarding moves to
+**ImprovMX** (free plan). Route 53 has MX `10 mx1.improvmx.com` / `20 mx2.improvmx.com` and SPF
+`v=spf1 include:spf.improvmx.com ~all`. Aliases, all going to adronhall@gmail.com: adron@, bikenhack@,
+transitsleuth@, transittweak@. While the old nameservers are still cached, mail goes to WordPress
+forwarding (still configured); after that it goes to ImprovMX, so mail keeps flowing throughout. Set up the
+ImprovMX aliases **before** the nameserver change.
 
 1. WordPress.com → **Upgrades → Domains → transitsleuth.com → Name servers**. Turn off "Use WordPress.com
    name servers" and enter the four Route 53 nameservers above.
@@ -55,9 +62,8 @@ nameservers a resolver uses during propagation.
    hours; WordPress keeps answering for resolvers that still have the old nameservers cached.
 3. The ACM certificate validates automatically once Route 53 is authoritative (`PENDING_VALIDATION` →
    `ISSUED`).
-4. Send a test email to an @transitsleuth.com address to confirm WordPress forwarding still works with
-   external nameservers. If it doesn't, replace the MX with another forwarder (ImprovMX, ForwardEmail, or
-   SES inbound).
+4. Send a test email to each @transitsleuth.com alias and confirm it arrives in Gmail through ImprovMX
+   (the ImprovMX dashboard shows a log of delivered mail).
 
 ### Phase 2: switch the website (after Phase 1 has settled, ideally 48 hours or more)
 5. Add the aliases `transitsleuth.com` and `www.transitsleuth.com` plus the ACM certificate to the CloudFront
@@ -66,7 +72,7 @@ nameservers a resolver uses during propagation.
 7. In Route 53, replace the apex A records with **A + AAAA alias → CloudFront** and point `www` (CNAME or alias)
    at the distribution. Delete the `*` wildcard; it only existed for WordPress.
    Rollback = restore the A records `192.0.78.24/25` (TTL 300).
-8. Leave MX alone.
+8. Leave MX and SPF (ImprovMX) alone.
 
 ### Phase 3: wrap-up (after a few weeks)
 9. WordPress.com: switch the site's primary address to `transitsleuth.wordpress.com` and make the site

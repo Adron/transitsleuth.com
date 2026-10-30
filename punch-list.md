@@ -39,10 +39,13 @@ See [`EXPORT_PLAN.md`](EXPORT_PLAN.md) for the details behind each item.
 - [x] CloudFront function `transitsleuth-viewer-request` (www→apex 301, `/feed/`→XML, directory index), tested
 - [x] CloudFront distribution `E20W0QCXZCGJGY` in front of GitHub Pages (no domain attached yet)
 - [ ] Check the CloudFront preview end to end (old URLs, images, feed, 404)
+- [x] Found 4 WordPress email forwards (adron@, bikenhack@, transitsleuth@, transittweak@ → Gmail); WordPress forwarding requires WordPress nameservers, so it moves to ImprovMX
+- [x] ImprovMX MX + SPF records staged in Route 53
+- [ ] Sign up at ImprovMX for transitsleuth.com and add the 4 aliases
 - [ ] **Phase 1:** at WordPress.com, switch the domain's nameservers to the 4 Route 53 servers (don't detach the domain or delete anything)
 - [ ] Confirm `dig NS transitsleuth.com` shows awsdns and the WordPress site still loads at https://transitsleuth.com
 - [ ] ACM certificate shows `ISSUED`
-- [ ] Send a test email to an @transitsleuth.com address (WordPress forwarding through the copied MX)
+- [ ] Send a test email to each alias; check the ImprovMX log and Gmail
 - [ ] **Phase 2** (after about 48 hours): attach the domain and certificate to CloudFront, test with `--resolve`, then point the apex A/AAAA alias and `www` at CloudFront; delete the `*` wildcard
 - [ ] Check that `http://`, `www.` and `https://` all end up at `https://transitsleuth.com/` with a valid certificate
 - [ ] **Phase 3** (a few weeks later): set the WordPress site's primary address to `transitsleuth.wordpress.com`, make it private; keep the domain registration on auto-renew
