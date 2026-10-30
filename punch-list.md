@@ -29,8 +29,8 @@ See [`EXPORT_PLAN.md`](EXPORT_PLAN.md) for the details behind each item.
 
 ## 3. Deploy to GitHub
 - [x] GitHub Actions workflow (`.github/workflows/pages.yml`) builds Jekyll 4 and deploys to Pages
-- [ ] Push to `main` and enable Pages with **Source: GitHub Actions**
-- [ ] First workflow run green; site reachable at the `github.io` URL (images inside posts will only resolve once the custom domain is set)
+- [x] Push to `main` and enable Pages with **Source: GitHub Actions**
+- [x] First workflow run green; site live at https://adron.github.io/transitsleuth.com/ (images inside posts only resolve once the custom domain is set)
 
 ## 4. Domain and DNS
 - [ ] Verify `transitsleuth.com` for the Adron GitHub account (Settings → Pages → Verified domains; add the TXT record)
