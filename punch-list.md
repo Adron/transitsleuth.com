@@ -1,6 +1,6 @@
 # Migration Punch List
 
-Running checklist for moving transitsleuth.com from WordPress.com to GitHub Pages.
+Running checklist for moving transitsleuth.com from WordPress.com to GitHub Pages behind CloudFront, with DNS in Route 53.
 See [`EXPORT_PLAN.md`](EXPORT_PLAN.md) for the details behind each item.
 
 ## 1. Export content
@@ -30,21 +30,26 @@ See [`EXPORT_PLAN.md`](EXPORT_PLAN.md) for the details behind each item.
 ## 3. Deploy to GitHub
 - [x] GitHub Actions workflow (`.github/workflows/pages.yml`) builds Jekyll 4 and deploys to Pages
 - [x] Push to `main` and enable Pages with **Source: GitHub Actions**
-- [x] First workflow run green; site live at https://adron.github.io/transitsleuth.com/ (a build hook prefixes post image/link paths for the `/transitsleuth.com/` subpath)
+- [x] First workflow run green on GitHub Pages
+- [x] Build for the site root; CloudFront serves it at the real domain (preview: https://d3mkx1xaqftf68.cloudfront.net/)
 
-## 4. Domain and DNS
-- [ ] Verify `transitsleuth.com` for the Adron GitHub account (Settings → Pages → Verified domains; add the TXT record)
-- [ ] Lower the DNS TTL a day ahead
-- [ ] Detach the domain from the WordPress.com site (or make `transitsleuth.wordpress.com` its primary address)
-- [ ] In WordPress.com DNS, replace the apex A records with GitHub's 4 A and 4 AAAA records; point `www` CNAME at `adron.github.io`
-- [ ] **Keep the MX record and email forwarding**; send a test email to an @transitsleuth.com address after the change
-- [ ] Set the custom domain `transitsleuth.com` in repo Settings → Pages
-- [ ] Wait for the certificate, then turn on **Enforce HTTPS**
-- [ ] Check that `http://`, `www.` and `https://` all end up at `https://transitsleuth.com/`
+## 4. Domain and DNS (Route 53 + CloudFront; runbook in [`infra/README.md`](infra/README.md))
+- [x] Route 53 hosted zone `Z01415652KSSVPZMS4JU2` with an exact copy of the WordPress.com records (A, www, `*`, MX)
+- [x] ACM certificate requested for transitsleuth.com + www, DNS validation records added in Route 53
+- [x] CloudFront function `transitsleuth-viewer-request` (www→apex 301, `/feed/`→XML, directory index), tested
+- [x] CloudFront distribution `E20W0QCXZCGJGY` in front of GitHub Pages (no domain attached yet)
+- [ ] Check the CloudFront preview end to end (old URLs, images, feed, 404)
+- [ ] **Phase 1:** at WordPress.com, switch the domain's nameservers to the 4 Route 53 servers (don't detach the domain or delete anything)
+- [ ] Confirm `dig NS transitsleuth.com` shows awsdns and the WordPress site still loads at https://transitsleuth.com
+- [ ] ACM certificate shows `ISSUED`
+- [ ] Send a test email to an @transitsleuth.com address (WordPress forwarding through the copied MX)
+- [ ] **Phase 2** (after about 48 hours): attach the domain and certificate to CloudFront, test with `--resolve`, then point the apex A/AAAA alias and `www` at CloudFront; delete the `*` wildcard
+- [ ] Check that `http://`, `www.` and `https://` all end up at `https://transitsleuth.com/` with a valid certificate
+- [ ] **Phase 3** (a few weeks later): set the WordPress site's primary address to `transitsleuth.wordpress.com`, make it private; keep the domain registration on auto-renew
 
 ## 5. Post-cutover checks
 - [ ] Spot-check old URLs on the live domain: a 2009 post, a Unicode-slug post, `/page/119/`, `/category/wanderings/`, `/tag/seattle/`, `/2013/11/`, an image, a PDF
-- [ ] Update FeedBurner's source feed to `https://transitsleuth.com/feed.xml` (GitHub serves `/feed/` as text/html, which FeedBurner may not accept)
+- [ ] Confirm FeedBurner still picks up new posts from `https://transitsleuth.com/feed/` (CloudFront serves it as XML)
 - [ ] Google Search Console: verify the domain, submit `https://transitsleuth.com/sitemap.xml`, and watch the Pages/404 reports for a few weeks
 - [ ] Bing Webmaster Tools: submit the sitemap (the site already has an `msvalidate` tag on WordPress, which isn't carried over; re-verify via DNS)
 - [ ] Add any old URLs that show up as 404s in Search Console to `_data/redirects.yml`
@@ -55,5 +60,5 @@ See [`EXPORT_PLAN.md`](EXPORT_PLAN.md) for the details behind each item.
 - WordPress attachment pages (`/…/post-slug/image-name/`) no longer exist; images link to the files directly.
 - `?p=123` and `wp.me` shortlinks can't be redirected on static hosting.
 - Paginated archives (`/category/x/page/2/`) are now single, complete lists at `/category/x/`.
-- GitHub Pages can't send real 301s; redirects use meta refresh + canonical, which Google treats as permanent.
+- Old-URL redirects in `_data/redirects.yml` use meta refresh + canonical (www→apex and trailing-slash redirects are real 301s from CloudFront).
 - Links already dead on WordPress (2009 `/blogs/my_transportation_obsession/…`, `/2012/annual-report/`, 3 SmugMug images) remain dead.

@@ -23,11 +23,11 @@ jobs:
         with:
           ruby-version: "3.3"
           bundler-cache: true
-      - id: pages
-        uses: actions/configure-pages@v6
+      - uses: actions/configure-pages@v6
       # Jekyll 4 (not GitHub's built-in Jekyll 3.10) so render_with_liquid and the
-      # custom archive plugin in _plugins/ work.
-      - run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
+      # custom archive plugin in _plugins/ work. Built for the site root: CloudFront
+      # (infra/README.md) serves adron.github.io/transitsleuth.com at https://transitsleuth.com/.
+      - run: bundle exec jekyll build
         env:
           JEKYLL_ENV: production
       - uses: actions/upload-pages-artifact@v5

@@ -76,41 +76,8 @@ The WordPress **Editor** theme (GPL) is ported, not imitated:
 - Dropped because they depend on WordPress.com: comments, likes and sharing, email subscriptions, and the
   Google+ widget.
 
-## Hosting: GitHub Pages at https://transitsleuth.com
+## Hosting and DNS
 
-- The site builds with **Jekyll 4.4 in GitHub Actions** (`.github/workflows/pages.yml`). GitHub's built-in
-  Jekyll 3.10 can't run the custom plugin or `render_with_liquid`.
-- The repo `Adron/transitsleuth.com` is public, so Pages is free. The published site is about 450 MB, under
-  the 1 GB limit, and the largest file is 18 MB.
-- Before the domain moves, the site is served at https://adron.github.io/transitsleuth.com/. A build hook in
-  `_plugins/wp_archives.rb` prefixes root-relative paths inside posts with that subpath, and does nothing
-  once the custom domain is set.
-
-### DNS (current)
-
-- Registrar: **Automattic (WordPress.com)**; the domain expires 2030-04-22.
-- Nameservers: `ns1-3.wordpress.com`. Apex A records: `192.0.78.24` and `192.0.78.25`. `www` points to the
-  apex.
-- **Email:** MX is `smtp-fwd.wordpress.com` (WordPress.com email forwarding). **Moving DNS without carrying
-  this over will break email.**
-
-### DNS (target)
-
-| Host | Type | Value |
-|------|------|-------|
-| `@` | A | 185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153 |
-| `@` | AAAA | 2606:50c0:8000::153, 2606:50c0:8001::153, 2606:50c0:8002::153, 2606:50c0:8003::153 |
-| `www` | CNAME | `adron.github.io` |
-| `_github-pages-challenge-adron` | TXT | value from GitHub → Settings → Pages → Verified domains |
-| `@` | MX | keep the existing email forwarding |
-
-**Recommended:** keep the domain at WordPress.com and edit its DNS there. Detach the domain from the
-WordPress.com site first (or make `transitsleuth.wordpress.com` the site's primary address), then replace
-the A records. Email forwarding keeps working because the nameservers don't change. Transferring the domain
-elsewhere (Cloudflare, Porkbun) is possible, but the email forwarding has to be rebuilt first.
-
-### HTTPS
-
-GitHub issues a Let's Encrypt certificate automatically once DNS points at it, which takes anywhere from
-minutes to about 24 hours. Then turn on **Settings → Pages → Enforce HTTPS**. Content was already rewritten
-to use https and relative links, so there are no mixed-content warnings.
+GitHub Pages (built by `.github/workflows/pages.yml`) sits behind CloudFront, with DNS in Route 53. The domain
+stays registered at WordPress.com. The resources, the reasoning, and the zero-downtime cutover runbook are
+in [`infra/README.md`](infra/README.md).
