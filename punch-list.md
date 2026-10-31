@@ -38,7 +38,7 @@ See [`EXPORT_PLAN.md`](EXPORT_PLAN.md) for the details behind each item.
 - [x] ACM certificate requested for transitsleuth.com + www, DNS validation records added in Route 53
 - [x] CloudFront function `transitsleuth-viewer-request` (www→apex 301, `/feed/`→XML, directory index), tested
 - [x] CloudFront distribution `E20W0QCXZCGJGY` in front of GitHub Pages (no domain attached yet)
-- [ ] Check the CloudFront preview end to end (old URLs, images, feed, 404)
+- [x] CloudFront preview checked end to end (old URLs, images, feed, 404)
 - [x] Found 4 WordPress email forwards (adron@, bikenhack@, transitsleuth@, transittweak@ → Gmail); WordPress forwarding requires WordPress nameservers, so it moves to AWS SES
 - [x] SES inbound forwarding built in us-east-1: identity + DKIM, S3 bucket, Lambda `transitsleuth-mail-forward`, receipt rule in `substratal-prod-inbound`
 - [x] Route 53: MX → SES inbound, SPF, DMARC, DKIM CNAMEs
@@ -47,16 +47,17 @@ See [`EXPORT_PLAN.md`](EXPORT_PLAN.md) for the details behind each item.
 - [x] **Phase 1:** WordPress.com nameservers switched to the 4 Route 53 servers (2026-10-31 01:19 UTC); nothing detached or deleted
 - [x] Registry delegates to Route 53 (whois updated 2026-10-31 01:28:57 UTC); public resolvers answer from Route 53; WordPress site still loads
 - [x] ACM certificate `ISSUED` (transitsleuth.com + www)
-- [ ] Send a test email to each alias; check Gmail and the Lambda logs
-- [ ] **Phase 2** (after about 48 hours): attach the domain and certificate to CloudFront, test with `--resolve`, then point the apex A/AAAA alias and `www` at CloudFront; delete the `*` wildcard
-- [ ] Check that `http://`, `www.` and `https://` all end up at `https://transitsleuth.com/` with a valid certificate
-- [ ] **Phase 3** (a few weeks later): set the WordPress site's primary address to `transitsleuth.wordpress.com`, make it private; keep the domain registration on auto-renew
+- [x] Real email test: adron@ forwarded via SES to Gmail (2026-10-31 17:05 UTC)
+- [x] **Phase 2** (2026-10-31 ~17:08 UTC): domain + certificate attached to CloudFront, tested with `--resolve`, apex/www A+AAAA aliased to CloudFront, `*` wildcard deleted
+- [x] `http://` and `www.` 301 to `https://transitsleuth.com/`; certificate valid (ACM, transitsleuth.com + www)
+- [ ] **Phase 3** (manual in WordPress.com): delete the 4 email forwarders; export subscribers; set the site's primary address to `transitsleuth.wordpress.com`; make the site private; keep the domain registration on auto-renew
 
 ## 5. Post-cutover checks
-- [ ] Spot-check old URLs on the live domain: a 2009 post, a Unicode-slug post, `/page/119/`, `/category/wanderings/`, `/tag/seattle/`, `/2013/11/`, an image, a PDF
-- [ ] Confirm FeedBurner still picks up new posts from `https://transitsleuth.com/feed/` (CloudFront serves it as XML)
-- [ ] Google Search Console: verify the domain, submit `https://transitsleuth.com/sitemap.xml`, and watch the Pages/404 reports for a few weeks
-- [ ] Bing Webmaster Tools: submit the sitemap (the site already has an `msvalidate` tag on WordPress, which isn't carried over; re-verify via DNS)
+- [x] Live crawl: 857 old URLs (all 591 posts, 3 pages, 54 categories, 120 tags, pagination, feed, sitemap, 80 uploads): all 200 from CloudFront/GitHub
+- [x] FeedBurner's source is `https://transitsleuth.com/feed/`, which serves valid RSS (application/xml) from the new site
+- [x] Google Search Console: domain property verified (TXT in Route 53), sitemap submitted and read (2,130 URLs discovered)
+- [ ] Watch Search Console's Pages/404 reports for a few weeks
+- [ ] Bing Webmaster Tools (needs your Microsoft sign-in): Import from Google Search Console
 - [ ] Add any old URLs that show up as 404s in Search Console to `_data/redirects.yml`
 - [ ] Keep `transitsleuth.wordpress.com` up (private or unlinked) for a few weeks as a fallback, then decide whether to delete it
 

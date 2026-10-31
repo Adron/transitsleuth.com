@@ -18,7 +18,7 @@ The domain stays **registered at WordPress.com** (Automattic); only its nameserv
 | Route 53 hosted zone | `Z01415652KSSVPZMS4JU2` |
 | Nameservers | `ns-1206.awsdns-22.org`, `ns-1645.awsdns-13.co.uk`, `ns-379.awsdns-47.com`, `ns-615.awsdns-12.net` |
 | ACM certificate (us-east-1) | `arn:aws:acm:us-east-1:196936048600:certificate/31876a51-470c-4d9a-a052-657881f99411` (transitsleuth.com, www) |
-| CloudFront distribution | `E20W0QCXZCGJGY` → `d3mkx1xaqftf68.cloudfront.net` |
+| CloudFront distribution | `E20W0QCXZCGJGY` → `d3mkx1xaqftf68.cloudfront.net`, aliases transitsleuth.com + www (live since 2026-10-31) |
 | CloudFront function | `transitsleuth-viewer-request`; source in [`cloudfront-viewer-request.js`](cloudfront-viewer-request.js) |
 | SES identity (us-east-1) | `transitsleuth.com` (Easy DKIM, RSA 2048; 3 `_domainkey` CNAMEs in Route 53) |
 | SES receipt rule | `transitsleuth-forwarding` in the active rule set `substratal-prod-inbound` (shared, see below) |
@@ -73,6 +73,10 @@ leaves a window of certificate errors that HSTS turns into hard failures. With C
 certificate is issued *before* the switch. It also gives real 301s and correct feed content types.
 
 ## Zero-downtime cutover runbook
+
+**Status:** Phases 1 and 2 complete (2026-10-31). Phase 3 (WordPress wind-down) is manual; see `punch-list.md`.
+
+Live DNS: apex and `www` A+AAAA alias → CloudFront; MX/SPF/DKIM/DMARC for SES; TXT `google-site-verification` (Search Console domain property; keep it).
 
 ### Phase 1: move DNS hosting only (visitors see no change)
 The Route 53 zone copies the WordPress.com zone (apex A `192.0.78.24/25`, `www` and `*` CNAME to the apex),
