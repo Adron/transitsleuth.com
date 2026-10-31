@@ -45,8 +45,8 @@ See [`EXPORT_PLAN.md`](EXPORT_PLAN.md) for the details behind each item.
 - [x] Add the 3 DKIM CNAMEs in WordPress DNS; SES identity verified (DKIM `SUCCESS`, 2026-10-31 01:15 UTC)
 - [x] Forwarder tested: sample message for adron@ forwarded to Gmail by the Lambda via SES (direct SMTP to SES inbound blocked on port 25 locally)
 - [x] **Phase 1:** WordPress.com nameservers switched to the 4 Route 53 servers (2026-10-31 01:19 UTC); nothing detached or deleted
-- [ ] Confirm `dig NS transitsleuth.com` shows awsdns and the WordPress site still loads at https://transitsleuth.com
-- [ ] ACM certificate shows `ISSUED`
+- [x] Registry delegates to Route 53 (whois updated 2026-10-31 01:28:57 UTC); public resolvers answer from Route 53; WordPress site still loads
+- [x] ACM certificate `ISSUED` (transitsleuth.com + www)
 - [ ] Send a test email to each alias; check Gmail and the Lambda logs
 - [ ] **Phase 2** (after about 48 hours): attach the domain and certificate to CloudFront, test with `--resolve`, then point the apex A/AAAA alias and `www` at CloudFront; delete the `*` wildcard
 - [ ] Check that `http://`, `www.` and `https://` all end up at `https://transitsleuth.com/` with a valid certificate
