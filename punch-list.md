@@ -42,9 +42,9 @@ See [`EXPORT_PLAN.md`](EXPORT_PLAN.md) for the details behind each item.
 - [x] Found 4 WordPress email forwards (adron@, bikenhack@, transitsleuth@, transittweak@ → Gmail); WordPress forwarding requires WordPress nameservers, so it moves to AWS SES
 - [x] SES inbound forwarding built in us-east-1: identity + DKIM, S3 bucket, Lambda `transitsleuth-mail-forward`, receipt rule in `substratal-prod-inbound`
 - [x] Route 53: MX → SES inbound, SPF, DMARC, DKIM CNAMEs
-- [ ] Add the 3 DKIM CNAMEs in WordPress DNS so SES verifies the domain before the switch (DKIM status `SUCCESS`)
-- [ ] Test the forwarder end to end before the switch
-- [ ] **Phase 1:** at WordPress.com, switch the domain's nameservers to the 4 Route 53 servers (don't detach the domain or delete anything)
+- [x] Add the 3 DKIM CNAMEs in WordPress DNS; SES identity verified (DKIM `SUCCESS`, 2026-10-31 01:15 UTC)
+- [x] Forwarder tested: sample message for adron@ forwarded to Gmail by the Lambda via SES (direct SMTP to SES inbound blocked on port 25 locally)
+- [x] **Phase 1:** WordPress.com nameservers switched to the 4 Route 53 servers (2026-10-31 01:19 UTC); nothing detached or deleted
 - [ ] Confirm `dig NS transitsleuth.com` shows awsdns and the WordPress site still loads at https://transitsleuth.com
 - [ ] ACM certificate shows `ISSUED`
 - [ ] Send a test email to each alias; check Gmail and the Lambda logs
